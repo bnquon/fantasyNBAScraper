@@ -8,14 +8,15 @@ import (
 func main() {
     c := colly.NewCollector()
 
-    c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-        link := e.Attr("href")
-        fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+    c.OnHTML("table.wikitable > tbody", func(e *colly.HTMLElement) {
+        e.ForEach("tr", func(_ int, el *colly.HTMLElement) {
+			fmt.Println(el.ChildText("td:nth-child(1)"))
+		})
     })
 
     c.OnRequest(func(r *colly.Request) {
         fmt.Println("Visiting", r.URL.String())
     })
 
-    c.Visit("http://httpbin.org/")
+    c.Visit("https://en.wikipedia.org/wiki/National_Basketball_Association#Teams")
 }
