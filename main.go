@@ -1,22 +1,30 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/gocolly/colly/v2"
+	"github.com/chromedp/chromedp"
 )
 
 func main() {
-    c := colly.NewCollector()
 
-    c.OnHTML("table.wikitable > tbody", func(e *colly.HTMLElement) {
-        e.ForEach("tr", func(_ int, el *colly.HTMLElement) {
-			fmt.Println(el.ChildText("td:nth-child(1)"))
-		})
-    })
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+	)
 
-    c.OnRequest(func(r *colly.Request) {
-        fmt.Println("Visiting", r.URL.String())
-    })
+	defer cancel()	
 
-    c.Visit("https://en.wikipedia.org/wiki/National_Basketball_Association#Teams")
+	var tableData string
+
+	err := chromedp.Run(ctx,
+		chromedp.Navigate("https://fantasy.espn.com/basketball/leaders?leagueId=264010336&statSplit=lastSeason&scoringPeriodId=0&view=stats"),
+		chromedp.WaitVisible(`body`),
+		chromedp.OuterHTML("div.jsx-1811044066.player-column-table2.justify-start.pa0.relative.flex.items-center.player-info", &tableData),
+	)
+	if err != nil {
+		fmt.Println("Error scraping data")
+		return
+	}
+
+	fmt.Println(tableData)
 }
