@@ -1,20 +1,23 @@
 package main
 
 import (
-	"encoding/csv"
+	"fmt"
 	"log"
-	"os"
+	"time"
+
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 )
 
-type Product struct {
-	name, price string
-}
+// type Player struct {
+// 	name string
+// 	fantasyPoints float32
+// }
 
 func main() {
 
-	var products []Product
+	// var topPlayers []Player
+	// fmt.Println(topPlayers)
 
 	service, err := selenium.NewChromeDriverService("./chromedriver", 4444)
 	if err != nil {
@@ -38,53 +41,67 @@ func main() {
 		log.Fatal("Error:", err)
 	}
 
-	err = driver.Get("https://scrapingclub.com/exercise/list_infinite_scroll/")
+	err = driver.Get("https://fantasy.espn.com/basketball/leaders")
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
 
-	productElements, err := driver.FindElements(selenium.ByCSSSelector, ".post")
+	err = driver.WaitWithTimeout(func(driver selenium.WebDriver) (bool, error) {
+		lastPlayer, _ := driver.FindElement(selenium.ByCSSSelector, "tbody.Table__TBODY:last-child")
+		if lastPlayer != nil {
+			return lastPlayer.IsDisplayed()
+		}
+		return false, nil
+	}, 10*time.Second)
+
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+
+	players, err := driver.FindElements(selenium.ByCSSSelector, "tbody.Table__TBODY")
 	if err != nil {
 	 log.Fatal("Error:", err)
 	}
 
-	for _, productElement  := range productElements {
-		nameElement, err := productElement.FindElement(selenium.ByCSSSelector, "h4")
-		priceElement, err := productElement.FindElement(selenium.ByCSSSelector, "h5")
-		name, err := nameElement.Text()
-		price, err := priceElement.Text()
-		if err != nil {
-			log.Fatal("Error:", err)
-		}
-		product := Product{}
-		product.name = name
-		product.price = price
-		products = append(products, product)
-	}
+	fmt.Println("Found the third tbody:", players)
+
+	// for _, productElement  := range productElements {
+	// 	nameElement, err := productElement.FindElement(selenium.ByCSSSelector, "h4")
+	// 	priceElement, err := productElement.FindElement(selenium.ByCSSSelector, "h5")
+	// 	name, err := nameElement.Text()
+	// 	price, err := priceElement.Text()
+	// 	if err != nil {
+	// 		log.Fatal("Error:", err)
+	// 	}
+	// 	product := Product{}
+	// 	product.name = name
+	// 	product.price = price
+	// 	products = append(products, product)
+	// }
 	
-	file, err := os.Create("products.csv")
-	if err != nil {
-		log.Fatal("Error:", err)
-	}
+	// file, err := os.Create("products.csv")
+	// if err != nil {
+	// 	log.Fatal("Error:", err)
+	// }
 
-	defer file.Close()
+	// defer file.Close()
 
-	writer := csv.NewWriter(file)
+	// writer := csv.NewWriter(file)
 
-	headers := []string{
-		"name",
-		"price",
-	}
+	// headers := []string{
+	// 	"name",
+	// 	"price",
+	// }
 
-	writer.Write(headers)
+	// writer.Write(headers)
 
-	for _, product := range products {
-		record := []string{
-			product.name,
-			product.price,
-		}
-		writer.Write(record)
-	}
+	// for _, product := range products {
+	// 	record := []string{
+	// 		product.name,
+	// 		product.price,
+	// 	}
+	// 	writer.Write(record)
+	// }
 
-	defer writer.Flush()
+	// defer writer.Flush()
 }
