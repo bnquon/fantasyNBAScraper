@@ -1,30 +1,90 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"github.com/chromedp/chromedp"
+	"encoding/csv"
+	"log"
+	"os"
+	"github.com/tebeka/selenium"
+	"github.com/tebeka/selenium/chrome"
 )
+
+type Product struct {
+	name, price string
+}
 
 func main() {
 
-	ctx, cancel := chromedp.NewContext(
-		context.Background(),
-	)
+	var products []Product
 
-	defer cancel()	
-
-	var tableData string
-
-	err := chromedp.Run(ctx,
-		chromedp.Navigate("https://fantasy.espn.com/basketball/leaders?leagueId=264010336&statSplit=lastSeason&scoringPeriodId=0&view=stats"),
-		chromedp.WaitVisible(`body`),
-		chromedp.OuterHTML("div.jsx-1811044066.player-column-table2.justify-start.pa0.relative.flex.items-center.player-info", &tableData),
-	)
+	service, err := selenium.NewChromeDriverService("./chromedriver", 4444)
 	if err != nil {
-		fmt.Println("Error scraping data")
-		return
+		log.Fatal("Error:", err)
+	}
+	defer service.Stop()
+
+	caps := selenium.Capabilities{}
+	caps.AddChrome(chrome.Capabilities{Args: []string {
+		"--headless-new",
+	}})
+	
+	driver, err := selenium.NewRemote(caps, "")
+
+	if err != nil {
+		log.Fatal("Error:", err)
 	}
 
-	fmt.Println(tableData)
+	err = driver.MaximizeWindow("")
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+
+	err = driver.Get("https://scrapingclub.com/exercise/list_infinite_scroll/")
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+
+	productElements, err := driver.FindElements(selenium.ByCSSSelector, ".post")
+	if err != nil {
+	 log.Fatal("Error:", err)
+	}
+
+	for _, productElement  := range productElements {
+		nameElement, err := productElement.FindElement(selenium.ByCSSSelector, "h4")
+		priceElement, err := productElement.FindElement(selenium.ByCSSSelector, "h5")
+		name, err := nameElement.Text()
+		price, err := priceElement.Text()
+		if err != nil {
+			log.Fatal("Error:", err)
+		}
+		product := Product{}
+		product.name = name
+		product.price = price
+		products = append(products, product)
+	}
+	
+	file, err := os.Create("products.csv")
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+
+	headers := []string{
+		"name",
+		"price",
+	}
+
+	writer.Write(headers)
+
+	for _, product := range products {
+		record := []string{
+			product.name,
+			product.price,
+		}
+		writer.Write(record)
+	}
+
+	defer writer.Flush()
 }
