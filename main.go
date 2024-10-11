@@ -66,7 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
-	for index, row := range playerNamesRows {
+	for _, row := range playerNamesRows {
 		text, err := row.Text()
 		if err != nil {
 			log.Fatal("Error:", err)
@@ -78,21 +78,21 @@ func main() {
 			}
 			temp += string(char)
 		}
-		topPlayers[index].name = temp
+		player := Player{}
+		player.name = temp
+		topPlayers = append(topPlayers, player)
 	}
 	
 	fantasyPointsRows, err := players[2].FindElements(selenium.ByTagName, "tr")
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
-	for _, row := range fantasyPointsRows {
+	for index, row := range fantasyPointsRows {
 		text, err := row.Text()
 		if err != nil {
 			log.Fatal("Error:", err)
 		}
-		player := Player{}
-		player.fantasyPoints = text[0:4]
-		topPlayers = append(topPlayers, player)
+		topPlayers[index].fantasyPoints = text
 	}
 	
 	file, err := os.Create("players.csv")
