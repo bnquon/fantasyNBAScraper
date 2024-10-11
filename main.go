@@ -1,23 +1,22 @@
 package main
 
 import (
-	"fmt"
+	"encoding/csv"
 	"log"
+	"os"
 	"time"
-
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 )
 
-// type Player struct {
-// 	name string
-// 	fantasyPoints float32
-// }
+type Player struct {
+	name string
+	fantasyPoints string
+}
 
 func main() {
 
-	// var topPlayers []Player
-	// fmt.Println(topPlayers)
+	var topPlayers []Player
 
 	service, err := selenium.NewChromeDriverService("./chromedriver", 4444)
 	if err != nil {
@@ -62,46 +61,63 @@ func main() {
 	if err != nil {
 	 log.Fatal("Error:", err)
 	}
-
-	fmt.Println("Found the third tbody:", players)
-
-	// for _, productElement  := range productElements {
-	// 	nameElement, err := productElement.FindElement(selenium.ByCSSSelector, "h4")
-	// 	priceElement, err := productElement.FindElement(selenium.ByCSSSelector, "h5")
-	// 	name, err := nameElement.Text()
-	// 	price, err := priceElement.Text()
-	// 	if err != nil {
-	// 		log.Fatal("Error:", err)
-	// 	}
-	// 	product := Product{}
-	// 	product.name = name
-	// 	product.price = price
-	// 	products = append(products, product)
-	// }
 	
-	// file, err := os.Create("products.csv")
-	// if err != nil {
-	// 	log.Fatal("Error:", err)
-	// }
+	playerNamesRows, err := players[0].FindElements(selenium.ByTagName, "tr")
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+	for index, row := range playerNamesRows {
+		text, err := row.Text()
+		if err != nil {
+			log.Fatal("Error:", err)
+		}
+		var temp string;
+		for _, char := range text {
+			if char == '\n' {
+				break
+			}
+			temp += string(char)
+		}
+		topPlayers[index].name = temp
+	}
+	
+	fantasyPointsRows, err := players[2].FindElements(selenium.ByTagName, "tr")
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+	for _, row := range fantasyPointsRows {
+		text, err := row.Text()
+		if err != nil {
+			log.Fatal("Error:", err)
+		}
+		player := Player{}
+		player.fantasyPoints = text[0:4]
+		topPlayers = append(topPlayers, player)
+	}
+	
+	file, err := os.Create("players.csv")
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
 
-	// defer file.Close()
+	defer file.Close()
 
-	// writer := csv.NewWriter(file)
+	writer := csv.NewWriter(file)
 
-	// headers := []string{
-	// 	"name",
-	// 	"price",
-	// }
+	headers := []string{
+		"name",
+		"fantasyPoints",
+	}
 
-	// writer.Write(headers)
+	writer.Write(headers)
 
-	// for _, product := range products {
-	// 	record := []string{
-	// 		product.name,
-	// 		product.price,
-	// 	}
-	// 	writer.Write(record)
-	// }
+	for _, player := range topPlayers {
+		record := []string{
+			player.name,
+			player.fantasyPoints,
+		}
+		writer.Write(record)
+	}
 
-	// defer writer.Flush()
+	defer writer.Flush()
 }
