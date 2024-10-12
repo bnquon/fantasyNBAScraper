@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 	"time"
+
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Player struct {
@@ -14,7 +20,44 @@ type Player struct {
 	fantasyPoints string
 }
 
+const MONGOURL = "mongodb://localhost:27017" 
+
 func main() {
+
+	serverApi := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(MONGOURL).SetServerAPIOptions(serverApi)
+	client, err := mongo.Connect(context.TODO(), opts)
+
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+
+	err = client.Ping(context.TODO(), nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("Connected to MongoDB!")
+
+	database := client.Database("NBAFantasyProject")
+	collection := database.Collection("DailyFantasyPoints")
+
+	test := bson.D{
+		{Key: "name", Value: "Brandon Quon"},
+		{Key: "fantasyPoints", Value: 0},  // Assuming fantasyPoints is an integer
+	}
+	
+	_, err = collection.InsertOne(context.TODO(), test)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Inserted a single document: ", test)
 
 	var topPlayers []Player
 
@@ -66,7 +109,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
-	for _, row := range playerNamesRows {
+	for _, row := range playerNamesRows[0:10] {
 		text, err := row.Text()
 		if err != nil {
 			log.Fatal("Error:", err)
@@ -87,7 +130,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
-	for index, row := range fantasyPointsRows {
+	for index, row := range fantasyPointsRows[0:10] {
 		text, err := row.Text()
 		if err != nil {
 			log.Fatal("Error:", err)
