@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"net/smtp"
+	"os"
 
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
@@ -19,6 +21,8 @@ type Player struct {
 }
 
 const MONGOURL = "mongodb://localhost:27017" 
+
+
 
 func main() {
 
