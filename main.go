@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 	"net/smtp"
 	"os"
+	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,7 +23,41 @@ type Player struct {
 
 const MONGOURL = "mongodb://localhost:27017" 
 
+func getENV(key string) string {
+	err := godotenv.Load(".env")
 
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
+
+func sendEmail(email string, dailyResults []Player, date string) {
+	from := getENV("EMAIL")
+	password := getENV("EMAIL_PASSWORD")
+
+	smtpHost := "smtp.gmail.com"
+  	smtpPort := "587"
+
+	formatResults := "Top 10 fantasy players of the day:" + date + "\n\n"
+
+	for index, player := range dailyResults {
+		formatResults += fmt.Sprint(index+1) + ". " + player.Name + " - " + player.FantasyPoints + "\n"
+	}
+
+	message := []byte("Subject: NBA Daily Fantasy Points\n\n" + formatResults)
+
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{email}, message)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Email sent!")
+}
 
 func main() {
 
@@ -154,5 +189,9 @@ func main() {
 	}
 
 	fmt.Println("Emails: ", Emails)
+
+	for _, email := range Emails {
+		sendEmail(email.Email, topPlayers, now.Format("01-02-2006"))
+	}
 
 }
