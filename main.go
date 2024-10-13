@@ -124,15 +124,31 @@ func main() {
     fmt.Println("Connected to MongoDB!")
 
 	database := client.Database("NBAFantasyProject")
-	collection := database.Collection("DailyFantasyPoints")
+	playerCollection := database.Collection("DailyFantasyPoints")
 
 	doc := bson.D{{Key: "date", Value: now.Format("01-02-2006")}, {Key: "players", Value: topPlayers}}
 	
-	_, err = collection.InsertOne(context.TODO(), bson.D(doc))
+	_, err = playerCollection.InsertOne(context.TODO(), bson.D(doc))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("Inserted the top players of the day: ", doc)
+
+	var Emails []struct{
+		Email string `bson:"email"`
+	}
 	
+	emailCollection := database.Collection("Emails")
+	cursor, err := emailCollection.Find(context.TODO(), bson.D{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err = cursor.All(context.Background(), &Emails); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Emails: ", Emails)
+
 }
