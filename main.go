@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/tebeka/selenium"
@@ -16,48 +14,13 @@ import (
 )
 
 type Player struct {
-	name string
-	fantasyPoints string
+	Name string `bson:"name"`
+	FantasyPoints string `bson:"fantasyPoints"`
 }
 
 const MONGOURL = "mongodb://localhost:27017" 
 
 func main() {
-
-	serverApi := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(MONGOURL).SetServerAPIOptions(serverApi)
-	client, err := mongo.Connect(context.TODO(), opts)
-
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err = client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
-
-	err = client.Ping(context.TODO(), nil)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println("Connected to MongoDB!")
-
-	database := client.Database("NBAFantasyProject")
-	collection := database.Collection("DailyFantasyPoints")
-
-	test := bson.D{
-		{Key: "name", Value: "Brandon Quon"},
-		{Key: "fantasyPoints", Value: 0},  // Assuming fantasyPoints is an integer
-	}
-	
-	_, err = collection.InsertOne(context.TODO(), test)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Inserted a single document: ", test)
 
 	var topPlayers []Player
 
@@ -122,7 +85,7 @@ func main() {
 			temp += string(char)
 		}
 		player := Player{}
-		player.name = temp
+		player.Name = temp
 		topPlayers = append(topPlayers, player)
 	}
 	
@@ -135,32 +98,41 @@ func main() {
 		if err != nil {
 			log.Fatal("Error:", err)
 		}
-		topPlayers[index].fantasyPoints = text
+		topPlayers[index].FantasyPoints = text
 	}
-	
-	file, err := os.Create("players.csv")
+
+	now := time.Now()
+		
+	serverApi := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(MONGOURL).SetServerAPIOptions(serverApi)
+	client, err := mongo.Connect(context.TODO(), opts)
+
 	if err != nil {
-		log.Fatal("Error:", err)
+		panic(err)
 	}
-
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-
-	headers := []string{
-		"name",
-		"fantasyPoints",
-	}
-
-	writer.Write(headers)
-
-	for _, player := range topPlayers {
-		record := []string{
-			player.name,
-			player.fantasyPoints,
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
 		}
-		writer.Write(record)
+	}()
+
+	err = client.Ping(context.TODO(), nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("Connected to MongoDB!")
+
+	database := client.Database("NBAFantasyProject")
+	collection := database.Collection("DailyFantasyPoints")
+
+	doc := bson.D{{Key: "date", Value: now.Format("01-02-2006")}, {Key: "players", Value: topPlayers}}
+	
+	_, err = collection.InsertOne(context.TODO(), bson.D(doc))
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	defer writer.Flush()
+	fmt.Println("Inserted the top players of the day: ", doc)
+	
 }
