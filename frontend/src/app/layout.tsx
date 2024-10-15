@@ -15,7 +15,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "BQuons Fantasy NBA Web Scraper",
-  description: "Next.js + TypeScript + Tailwind CSS + Vercel",
+  description: "Email signup for BQuons Daily Fantasy NBA Web Scraper emails",
 };
 
 export default function RootLayout({
