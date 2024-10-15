@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         await collection.insertOne(data)
         return NextResponse.json({ message: "Email saved" })
     } catch (error) {
-        return NextResponse.json({ message: "Error saving email" })
+        return NextResponse.json({ message: error })
     } finally {
         await client.close()
     }
