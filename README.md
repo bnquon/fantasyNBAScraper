@@ -18,4 +18,4 @@ This project is a web application built using **Next.js** and **Golang** that sc
 - **Frontend**: Next.js, Material UI
 - **Backend**: Golang (Rod for scraping), MongoDB Atlas (for data storage)
 - **Automation**: Google Cloud Functions, Google Cloud Scheduler
-- **Deployment**: (Assuming Vercel or Netlify for frontend, Google Cloud for serverless functions)
+- **Deployment**: Vercel for frontend, Google Cloud for serverless functions
