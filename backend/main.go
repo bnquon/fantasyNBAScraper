@@ -26,18 +26,15 @@ func init() {
 	functions.HTTP("HelloHTTP", helloHTTP)
 }
 
-// RunJob contains your scraping and database logic
 func RunJob() error {
 	var MONGO_URI = os.Getenv("MONGO_URL")
 	var topPlayers []Player
 
 	browser := rod.New().MustConnect()
-    defer browser.MustClose() // Ensure the browser closes when done
+    defer browser.MustClose()
 
-    // Navigate to the web page
     page := browser.MustPage("https://fantasy.espn.com/basketball/leaders").MustWaitStable()
 
-    // Find the table with the player data
     table := page.MustElements("tbody.Table__TBODY")
 
     // Find the rows in the table
@@ -51,12 +48,11 @@ func RunJob() error {
 		text := playerRows[i].MustText()
     	name := ""
 
-    // Split the text by new line characters to extract the name
     for _, char := range text {
         if char == '\n' {
-            break // Stop accumulating name at the first newline character
+            break
         }
-        name += string(char) // Accumulate the character to the name string
+        name += string(char)
     }
 		temp.FantasyPoints = fantasyRows[i].MustText()
 		temp.Name = name
@@ -120,17 +116,14 @@ func RunJob() error {
 	return nil
 }
 
-// helloHTTP is your HTTP handler function
 func helloHTTP(w http.ResponseWriter, r *http.Request) {
 
-	// Trigger RunJob when the HTTP request comes in
 	err := RunJob()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Job failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// If RunJob is successful
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "Job completed successfully!")
 }
